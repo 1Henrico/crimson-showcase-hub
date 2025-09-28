@@ -30,6 +30,9 @@ const Header = () => {
             <a href="#contact" className="text-foreground hover:text-primary transition-colors duration-300">
               Contato
             </a>
+            <a href="/admin" className="text-foreground hover:text-primary transition-colors duration-300">
+              Admin
+            </a>
           </nav>
           
           <div className="flex items-center space-x-4">
