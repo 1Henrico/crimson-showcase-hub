@@ -1,43 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Fuel, Gauge, Calendar, MapPin } from "lucide-react";
+import { Fuel, Gauge, Calendar, MapPin, Loader2 } from "lucide-react";
+import { useVehicles } from "@/hooks/useVehicles";
 
 const FeaturedVehicles = () => {
-  const vehicles = [
-    {
-      id: 1,
-      name: "Honda Civic 2023",
-      price: "R$ 125.000",
-      year: "2023",
-      km: "15.000 km",
-      fuel: "Flex",
-      location: "São Paulo, SP",
-      image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop&crop=center",
-      featured: true
-    },
-    {
-      id: 2,
-      name: "Toyota Corolla 2022",
-      price: "R$ 110.000",
-      year: "2022",
-      km: "28.000 km",
-      fuel: "Flex",
-      location: "São Paulo, SP",
-      image: "https://images.unsplash.com/photo-1549399137-99c61b4df73b?w=600&h=400&fit=crop&crop=center",
-      featured: false
-    },
-    {
-      id: 3,
-      name: "Hyundai HB20 2024",
-      price: "R$ 95.000",
-      year: "2024",
-      km: "5.000 km",
-      fuel: "Flex",
-      location: "São Paulo, SP",
-      image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&h=400&fit=crop&crop=center",
-      featured: false
-    }
-  ];
+  const { vehicles, loading } = useVehicles();
+
+  if (loading) {
+    return (
+      <section id="vehicles" className="py-24 bg-background">
+        <div className="container mx-auto px-4 flex items-center justify-center">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="text-muted-foreground">Carregando veículos...</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="vehicles" className="py-24 bg-background">

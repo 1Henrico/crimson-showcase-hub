@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,27 +19,15 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Plus, Edit, Trash2, ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-interface Vehicle {
-  id: number;
-  name: string;
-  price: string;
-  year: string;
-  km: string;
-  fuel: string;
-  location: string;
-  image: string;
-  featured: boolean;
-  description?: string;
-}
+import { useVehicles, Vehicle } from "@/hooks/useVehicles";
 
 const Admin = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const { vehicles, loading, addVehicle, updateVehicle, deleteVehicle } = useVehicles();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     price: "",
@@ -51,65 +39,6 @@ const Admin = () => {
     featured: false,
     description: ""
   });
-  const { toast } = useToast();
-
-  // Carregar dados do localStorage ou usar dados iniciais
-  useEffect(() => {
-    const savedVehicles = localStorage.getItem('magrinho_vehicles');
-    
-    if (savedVehicles) {
-      // Se existem dados salvos, usar eles
-      setVehicles(JSON.parse(savedVehicles));
-    } else {
-      // Se não existem dados salvos, usar dados iniciais e salvar
-      const initialVehicles: Vehicle[] = [
-        {
-          id: 1,
-          name: "Honda Civic 2023",
-          price: "R$ 125.000",
-          year: "2023",
-          km: "15.000 km",
-          fuel: "Flex",
-          location: "São Paulo, SP",
-          image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop&crop=center",
-          featured: true,
-          description: "Honda Civic em excelente estado, revisões em dia."
-        },
-        {
-          id: 2,
-          name: "Toyota Corolla 2022",
-          price: "R$ 110.000",
-          year: "2022",
-          km: "28.000 km",
-          fuel: "Flex",
-          location: "São Paulo, SP",
-          image: "https://images.unsplash.com/photo-1549399137-99c61b4df73b?w=600&h=400&fit=crop&crop=center",
-          featured: false,
-          description: "Toyota Corolla confiável, único dono."
-        },
-        {
-          id: 3,
-          name: "Hyundai HB20 2024",
-          price: "R$ 95.000",
-          year: "2024",
-          km: "5.000 km",
-          fuel: "Flex",
-          location: "São Paulo, SP",
-          image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&h=400&fit=crop&crop=center",
-          featured: false,
-          description: "Hyundai HB20 seminovo, garantia de fábrica."
-        }
-      ];
-      setVehicles(initialVehicles);
-      localStorage.setItem('magrinho_vehicles', JSON.stringify(initialVehicles));
-    }
-  }, []);
-
-  // Função para salvar veículos no localStorage
-  const saveVehicles = (newVehicles: Vehicle[]) => {
-    setVehicles(newVehicles);
-    localStorage.setItem('magrinho_vehicles', JSON.stringify(newVehicles));
-  };
 
   const resetForm = () => {
     setFormData({
@@ -126,37 +55,24 @@ const Admin = () => {
     setEditingVehicle(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
     
-    if (editingVehicle) {
-      // Editar veículo existente
-      const updatedVehicles = vehicles.map(vehicle => 
-        vehicle.id === editingVehicle.id 
-          ? { ...formData, id: editingVehicle.id }
-          : vehicle
-      );
-      saveVehicles(updatedVehicles);
-      toast({
-        title: "Veículo atualizado",
-        description: "As informações do veículo foram atualizadas com sucesso.",
-      });
-    } else {
-      // Adicionar novo veículo
-      const newVehicle: Vehicle = {
-        ...formData,
-        id: Math.max(...vehicles.map(v => v.id), 0) + 1
-      };
-      const updatedVehicles = [...vehicles, newVehicle];
-      saveVehicles(updatedVehicles);
-      toast({
-        title: "Veículo adicionado",
-        description: "O novo veículo foi adicionado com sucesso.",
-      });
+    try {
+      if (editingVehicle) {
+        await updateVehicle(editingVehicle.id, formData);
+      } else {
+        await addVehicle(formData);
+      }
+      
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      // Erro já tratado no hook
+    } finally {
+      setSubmitting(false);
     }
-    
-    setIsDialogOpen(false);
-    resetForm();
   };
 
   const handleEdit = (vehicle: Vehicle) => {
@@ -175,15 +91,9 @@ const Admin = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm("Tem certeza que deseja excluir este veículo?")) {
-      const updatedVehicles = vehicles.filter(vehicle => vehicle.id !== id);
-      saveVehicles(updatedVehicles);
-      toast({
-        title: "Veículo removido",
-        description: "O veículo foi removido com sucesso.",
-        variant: "destructive"
-      });
+      await deleteVehicle(id);
     }
   };
 
@@ -191,6 +101,17 @@ const Admin = () => {
     resetForm();
     setIsDialogOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span className="text-muted-foreground">Carregando veículos...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -326,11 +247,23 @@ const Admin = () => {
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsDialogOpen(false)}
+                    disabled={submitting}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" className="bg-luxury-red hover:bg-luxury-red-dark">
-                    {editingVehicle ? "Atualizar" : "Adicionar"}
+                  <Button 
+                    type="submit" 
+                    className="bg-luxury-red hover:bg-luxury-red-dark"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {editingVehicle ? "Atualizando..." : "Adicionando..."}
+                      </>
+                    ) : (
+                      editingVehicle ? "Atualizar" : "Adicionar"
+                    )}
                   </Button>
                 </div>
               </form>
