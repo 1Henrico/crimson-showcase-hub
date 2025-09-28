@@ -53,48 +53,63 @@ const Admin = () => {
   });
   const { toast } = useToast();
 
-  // Carregar dados iniciais (simulando dados do banco)
+  // Carregar dados do localStorage ou usar dados iniciais
   useEffect(() => {
-    const initialVehicles: Vehicle[] = [
-      {
-        id: 1,
-        name: "Honda Civic 2023",
-        price: "R$ 125.000",
-        year: "2023",
-        km: "15.000 km",
-        fuel: "Flex",
-        location: "São Paulo, SP",
-        image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop&crop=center",
-        featured: true,
-        description: "Honda Civic em excelente estado, revisões em dia."
-      },
-      {
-        id: 2,
-        name: "Toyota Corolla 2022",
-        price: "R$ 110.000",
-        year: "2022",
-        km: "28.000 km",
-        fuel: "Flex",
-        location: "São Paulo, SP",
-        image: "https://images.unsplash.com/photo-1549399137-99c61b4df73b?w=600&h=400&fit=crop&crop=center",
-        featured: false,
-        description: "Toyota Corolla confiável, único dono."
-      },
-      {
-        id: 3,
-        name: "Hyundai HB20 2024",
-        price: "R$ 95.000",
-        year: "2024",
-        km: "5.000 km",
-        fuel: "Flex",
-        location: "São Paulo, SP",
-        image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&h=400&fit=crop&crop=center",
-        featured: false,
-        description: "Hyundai HB20 seminovo, garantia de fábrica."
-      }
-    ];
-    setVehicles(initialVehicles);
+    const savedVehicles = localStorage.getItem('magrinho_vehicles');
+    
+    if (savedVehicles) {
+      // Se existem dados salvos, usar eles
+      setVehicles(JSON.parse(savedVehicles));
+    } else {
+      // Se não existem dados salvos, usar dados iniciais e salvar
+      const initialVehicles: Vehicle[] = [
+        {
+          id: 1,
+          name: "Honda Civic 2023",
+          price: "R$ 125.000",
+          year: "2023",
+          km: "15.000 km",
+          fuel: "Flex",
+          location: "São Paulo, SP",
+          image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop&crop=center",
+          featured: true,
+          description: "Honda Civic em excelente estado, revisões em dia."
+        },
+        {
+          id: 2,
+          name: "Toyota Corolla 2022",
+          price: "R$ 110.000",
+          year: "2022",
+          km: "28.000 km",
+          fuel: "Flex",
+          location: "São Paulo, SP",
+          image: "https://images.unsplash.com/photo-1549399137-99c61b4df73b?w=600&h=400&fit=crop&crop=center",
+          featured: false,
+          description: "Toyota Corolla confiável, único dono."
+        },
+        {
+          id: 3,
+          name: "Hyundai HB20 2024",
+          price: "R$ 95.000",
+          year: "2024",
+          km: "5.000 km",
+          fuel: "Flex",
+          location: "São Paulo, SP",
+          image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&h=400&fit=crop&crop=center",
+          featured: false,
+          description: "Hyundai HB20 seminovo, garantia de fábrica."
+        }
+      ];
+      setVehicles(initialVehicles);
+      localStorage.setItem('magrinho_vehicles', JSON.stringify(initialVehicles));
+    }
   }, []);
+
+  // Função para salvar veículos no localStorage
+  const saveVehicles = (newVehicles: Vehicle[]) => {
+    setVehicles(newVehicles);
+    localStorage.setItem('magrinho_vehicles', JSON.stringify(newVehicles));
+  };
 
   const resetForm = () => {
     setFormData({
@@ -116,11 +131,12 @@ const Admin = () => {
     
     if (editingVehicle) {
       // Editar veículo existente
-      setVehicles(prev => prev.map(vehicle => 
+      const updatedVehicles = vehicles.map(vehicle => 
         vehicle.id === editingVehicle.id 
           ? { ...formData, id: editingVehicle.id }
           : vehicle
-      ));
+      );
+      saveVehicles(updatedVehicles);
       toast({
         title: "Veículo atualizado",
         description: "As informações do veículo foram atualizadas com sucesso.",
@@ -131,7 +147,8 @@ const Admin = () => {
         ...formData,
         id: Math.max(...vehicles.map(v => v.id), 0) + 1
       };
-      setVehicles(prev => [...prev, newVehicle]);
+      const updatedVehicles = [...vehicles, newVehicle];
+      saveVehicles(updatedVehicles);
       toast({
         title: "Veículo adicionado",
         description: "O novo veículo foi adicionado com sucesso.",
@@ -160,7 +177,8 @@ const Admin = () => {
 
   const handleDelete = (id: number) => {
     if (window.confirm("Tem certeza que deseja excluir este veículo?")) {
-      setVehicles(prev => prev.filter(vehicle => vehicle.id !== id));
+      const updatedVehicles = vehicles.filter(vehicle => vehicle.id !== id);
+      saveVehicles(updatedVehicles);
       toast({
         title: "Veículo removido",
         description: "O veículo foi removido com sucesso.",
